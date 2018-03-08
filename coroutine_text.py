@@ -98,3 +98,15 @@ import asyncio
 # loop=asyncio.get_event_loop()
 # loop.run_until_complete(init(loop))
 # loop.run_forever()
+
+
+class ll(object):
+    def __init__(self):
+        print ('----')
+
+class llx(ll):
+    def __init__(self):
+        super().__init__()
+
+x=llx()
+x

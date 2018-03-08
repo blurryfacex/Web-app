@@ -71,7 +71,21 @@ class StringField(Field):
     def __init__(self,name=None,primary_key=None,default=None,ddl='varchar(100)'):
         super().__init__(name,ddl,primary_key,default)
 
-class
+class BooleanField(Field):
+    def __init__(self,name=None,default=False):
+        super().__init__(name,'boolean',False,default)
+
+class IntergerField(Field):
+    def __init__(self,name=None,primary_key=False,default=0):
+        super().__init__(name,'bigint',primary_key,default)
+
+class FloatField(Field):
+    def __init__(self,name,primary_key=False,default=0.0):
+        super().__init__(name,'real',primary_key,default)
+
+class TextField(Field):
+    def __init__(self,name=None,default=None):
+        super().__init__(name,'text',False,default)
 
 
 class ModelMetaClass(type):
@@ -108,7 +122,7 @@ class ModelMetaClass(type):
         attrs['__primarykey__']=primaryKey
 
         attrs['__select__']="select '%s',%s from '%s'" %(primaryKey,','.join(escaped_fields),tablename)
-        attrs['__insert__']="insert into '%s' (%s,'%s') values (%s)" %(tablename,','.join(escaped_fields),primaryKey,create_args_string(len(escaped_fields)+1))
+        attrs['__insert__']="insert into '%s' (%s,'%s') values (%s)" %(tablename,','.join(escaped_fields),primaryKey,create_args_strings(len(escaped_fields)+1))
         attrs['__delete__']="delete from '%s' where '%s'=?" %(tablename,primaryKey)
         attrs['__update__']="update '%s' set %s where '%s'=?" %(tablename,','.join(map(lambda f:"'%s'" %f,fields)),primaryKey)
         return type.__new__(cls,name,bases,attrs)
@@ -117,7 +131,7 @@ class ModelMetaClass(type):
 class Model(dict,metaclass=ModelMetaClass):
 
     def __init__(self,**kw):
-        super(Model,self)__init__(**kw)
+        super().__init__(**kw)
 
     def __getattr__(self,key):
         try:
@@ -196,3 +210,16 @@ class Model(dict,metaclass=ModelMetaClass):
         rows=await execute(self.__insert__,args)
         if rows !=1:
             logging.warn('faild to insert record affected rows %s' %rows)
+
+    async def update(self):
+        args=list(map(self.getValue,self.__fields__))
+        args.append(self.getValue(self.__primary_key__))
+        rows=await execute(self.__update__,args)
+        if rows !=1:
+            logging.warn('faild to update to primary ke:affected rows %s'%rows)
+
+    async def remove(self):
+        args=[self.getValue(self.__primary_key__)]
+        rows=await execute(self.__delete__,args)
+        if rows !=1:
+            logging.warn('failed to remove by primary key: affected rows %s'%rows)
