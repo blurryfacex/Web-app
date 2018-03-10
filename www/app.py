@@ -1,8 +1,11 @@
 #coding:utf-8
 import logging;logging.basicConfig(level=logging.INFO)
-import asyncio,os,json,time
+import os,orm,json,time,asyncio
+
 from datetime import datetime
 from aiohttp import web
+from jinja2 import Environment,FileSystemLoader
+from coroweb import add_routes,add_static
 
 #主体
 async def index(request):
@@ -18,3 +21,5 @@ async def init(loop):
 loop=asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
 loop.run_forever()
+
+

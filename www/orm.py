@@ -1,4 +1,4 @@
-import logging
+import logging,asyncio
 import aiomysql
 
 
@@ -10,16 +10,16 @@ def log(sql,args=()):
 async def create_pool(loop,**kw):
     logging.info('create database connection pool...')
     global __pool
-    __pool=await aiomysql.create_pool(
-        host=kw.get('host','localhost'),
-        port=kw.get('port',8989),
-        user=kw.get('user','root'),
-        password=kw.get('password',123456),
+    __pool= await aiomysql.create_pool(
+        host=kw.get('host','127.0.0.1'),
+        port=kw.get('port',3306),
+        user=kw['user'],
+        password=kw['password'],
         db=kw['db'],
-        charset=kw.get('charset','utf8mb4'),
+        charset=kw.get('charset','utf8'),
         autocommit=kw.get('autocommit',True),
-        maxsize=kw.get('maxsize',10),
-        minsize=kw.get('minsize',1),
+        # maxsize=kw.get('maxsize',10),
+        # minsize=kw.get('minsize',1),
         loop=loop
     )
 
@@ -80,7 +80,7 @@ class IntergerField(Field):
         super().__init__(name,'bigint',primary_key,default)
 
 class FloatField(Field):
-    def __init__(self,name,primary_key=False,default=0.0):
+    def __init__(self,name=None,primary_key=False,default=0.0):
         super().__init__(name,'real',primary_key,default)
 
 class TextField(Field):
@@ -94,14 +94,14 @@ class ModelMetaClass(type):
             return type.__new__(cls,name,bases,attrs)
         tablename=attrs.get('__table__',None) or name
         logging.info('found model:%s (table:%s)' %(name,tablename))
-        mapping={}
+        mappings=dict()
         fields=[]
         primaryKey=None
 
         for k,v in attrs.items():
             if isinstance(v,Field):
                 logging.info('found mapping:%s==>%s' %(k,v))
-                mapping[k]=v
+                mappings[k]=v
                 if v.primary_key:
                     if primaryKey:
                         raise RuntimeError('Duplicate primary key for field %s' %k)
@@ -112,26 +112,26 @@ class ModelMetaClass(type):
         if not primaryKey:
             raise RuntimeError("can't found primary key")
 
-        for k in mapping.keys():
+        for k in mappings.keys():
             attrs.pop(k)
 
-        escaped_fields=list(map(lambda f:"'%s'" %f,fields))
-        attrs['__mappings__']=mapping
+        escaped_fields=list(map(lambda f:"%s" %f,fields))
+        attrs['__mappings__']=mappings
         attrs['__table__']=tablename
         attrs['__fields__']=fields
-        attrs['__primarykey__']=primaryKey
+        attrs['__primary_key__']=primaryKey
 
-        attrs['__select__']="select '%s',%s from '%s'" %(primaryKey,','.join(escaped_fields),tablename)
-        attrs['__insert__']="insert into '%s' (%s,'%s') values (%s)" %(tablename,','.join(escaped_fields),primaryKey,create_args_strings(len(escaped_fields)+1))
-        attrs['__delete__']="delete from '%s' where '%s'=?" %(tablename,primaryKey)
-        attrs['__update__']="update '%s' set %s where '%s'=?" %(tablename,','.join(map(lambda f:"'%s'" %f,fields)),primaryKey)
+        attrs['__select__']="select %s,%s from %s" %(primaryKey,','.join(escaped_fields),tablename)
+        attrs['__insert__']="insert into %s (%s,`%s`) values (%s)" %(tablename,','.join(escaped_fields),primaryKey,create_args_strings(len(escaped_fields)+1))
+        attrs['__delete__']="delete from %s where %s=?" %(tablename,primaryKey)
+        attrs['__update__']="update %s set %s where %s=?" %(tablename,','.join(map(lambda f:"`%s`" %f,fields)),primaryKey)
         return type.__new__(cls,name,bases,attrs)
 
 
 class Model(dict,metaclass=ModelMetaClass):
 
     def __init__(self,**kw):
-        super().__init__(**kw)
+        super(Model,self).__init__(**kw)
 
     def __getattr__(self,key):
         try:
@@ -146,9 +146,9 @@ class Model(dict,metaclass=ModelMetaClass):
         return getattr(self,key,None)
 
     def getValueOrDefault(self,key):
-        value=self.getValue(key)
+        value=getattr(self,key,None)
         if value is None:
-            field=self.__mapppings__[key]
+            field=self.__mappings__[key]
             if field.default is not None:
                 value=field.default() if callable(field.default) else field.default
                 logging.debug('using default value for %s:%s' %(key,str(value)))
@@ -220,6 +220,6 @@ class Model(dict,metaclass=ModelMetaClass):
 
     async def remove(self):
         args=[self.getValue(self.__primary_key__)]
-        rows=await execute(self.__delete__,args)
+        rows=await self.execute(self.__delete__,args)
         if rows !=1:
             logging.warn('failed to remove by primary key: affected rows %s'%rows)
