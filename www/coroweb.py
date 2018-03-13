@@ -1,4 +1,6 @@
 #coding:utf-8
+from typing import Any
+
 __author__='llx'
 import asyncio,os,inspect,logging,functools
 from urllib import parse
@@ -63,8 +65,8 @@ def post(path):
 def get_required_kw_args(fn):
     args=[]
     params=inspect.signature(fn).parameters
-    for name,param in params:
-        if params.kind==inspect.Parameter.KEYWORD_ONLY and param.default==inspect.Parameter.empty:
+    for name,param in params.items():
+        if param.kind==inspect.Parameter.KEYWORD_ONLY and param.default==inspect.Parameter.empty:
             args.append(name)
     return tuple(args)
 
@@ -92,7 +94,7 @@ def has_request_arg(fn):
     sig=inspect.signature(fn)
     params=sig.parameters
     found=False
-    for name,param in params:
+    for name,param in params.items():
         if name=='request':
             found=True
             continue
@@ -154,15 +156,16 @@ class RequestHandler(object):
             for name in self._get_required_kw_args:
                 if not name in kw:
                     return web.HTTPBadRequest('Missing Argment:%s' %name)
-        logging.warning('call wit args:%s'%kw)
+        logging.info('call wit args:%s'%str(kw))
 
         try:
-            await self._func(**kw)
+            r=await self._func(**kw)
+            return r
         except ApiError as e:
             return dict(error=e.error,data=e.data,message=e.data)
 
 def add_static(app):
-    path=os.path.join(os.path.dirname(os.path.abspath(__file__),'static'))
+    path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'static')
     app.router.add_static('/static/',path)
     logging.info('add static %s==>%s' %('/static/',path))
 
@@ -174,7 +177,7 @@ def add_route(app,fn):
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
         fn=asyncio.coroutine(fn)
     logging.info('add route %s %s ==> %s(%s)' %(method,path,fn.__name__,', '.join(inspect.signature(fn).parameters.keys())))
-    app.route.add_route(method,path,RequestHandler(app,fn))
+    app.router.add_route(method,path,RequestHandler(app,fn))
 
 def add_routes(app,module_name):
     n=module_name.rfind('.')
@@ -193,6 +196,5 @@ def add_routes(app,module_name):
             path=getattr(fn,'__route__',None)
             if method and path:
                 add_route(app,fn)
-
 
 

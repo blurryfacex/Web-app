@@ -3,7 +3,7 @@ import aiomysql
 
 
 __author__='llx'
-
+# __pool=dict()
 def log(sql,args=()):
     logging.info('sql:%s'%sql)
 
@@ -18,38 +18,36 @@ async def create_pool(loop,**kw):
         db=kw['db'],
         charset=kw.get('charset','utf8'),
         autocommit=kw.get('autocommit',True),
-        # maxsize=kw.get('maxsize',10),
-        # minsize=kw.get('minsize',1),
+        maxsize=kw.get('maxsize',10),
+        minsize=kw.get('minsize',1),
         loop=loop
     )
 
 async def select(sql,args,size=None):
     log(sql,args)
     global __pool
-    with (await __pool) as conn:
-        cur=await conn.sursor(aiomysql.DictCursor)
-        await cur.execute(sql.replace('?','%s'),args or ())
+    with (await  __pool.get()) as cnn:
+        cur=await cnn.cursor(aiomysql.DictCursor)
+        await cur.execute(sql.replace('?','%s'),args)
         if size:
             rs=await cur.fetchmany(size)
         else:
             rs=await cur.fetchall()
         await cur.close()
-        logging.info('rows returned:%s' %len(rs))
-        return rs
-
+    return rs
 
 async def execute(sql,args):
-    log(sql,args)
+    log(sql)
     global __pool
-    with (await __pool) as conn:
-        try:
-            cur=await conn.cursor()
+    try:
+        with (await __pool) as cnn:
+            cur=await cnn.cursor(aiomysql.DictCursor)
             await cur.execute(sql.replace('?','%s'),args)
             affected=cur.rowcount
             await cur.close()
-        except BaseException as e:
-            raise
-        return affected
+    except BaseException as e:
+        raise e
+    return affected
 
 def create_args_strings(num):
     n=[]
@@ -121,10 +119,10 @@ class ModelMetaClass(type):
         attrs['__fields__']=fields
         attrs['__primary_key__']=primaryKey
 
-        attrs['__select__']="select %s,%s from %s" %(primaryKey,','.join(escaped_fields),tablename)
+        attrs['__select__']="select %s,%s from `%s`" %(primaryKey,','.join(escaped_fields),tablename)
         attrs['__insert__']="insert into %s (%s,`%s`) values (%s)" %(tablename,','.join(escaped_fields),primaryKey,create_args_strings(len(escaped_fields)+1))
         attrs['__delete__']="delete from %s where %s=?" %(tablename,primaryKey)
-        attrs['__update__']="update %s set %s where %s=?" %(tablename,','.join(map(lambda f:"`%s`" %f,fields)),primaryKey)
+        attrs['__update__']="update %s set %s where %s=?" %(tablename,','.join(map(lambda f:'`%s=?' %(mappings.get(f).name or f),fields)),primaryKey)
         return type.__new__(cls,name,bases,attrs)
 
 
