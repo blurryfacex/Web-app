@@ -2,7 +2,7 @@
 import logging;logging.basicConfig(level=logging.INFO)
 import os,orm,json,time,asyncio
 from coroweb import get,post
-
+import handlers
 from datetime import datetime
 from aiohttp import web
 from jinja2 import Environment,FileSystemLoader
@@ -106,6 +106,7 @@ async def init(loop):
     app=web.Application(loop=loop,middlewares=[logger_factory,response_factory])
     init_jinja2(app,filter=dict(datetime=datetime_filter))
     add_routes(app,'handlers')
+
     add_static(app)
     srv=await loop.create_server(app.make_handler(),'127.0.0.1',9000)
     logging.info('server started at http://127.0.0.1:9000')
