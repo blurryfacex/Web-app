@@ -7,7 +7,7 @@ from datetime import datetime
 from aiohttp import web
 from jinja2 import Environment,FileSystemLoader
 from coroweb import add_routes,add_static
-
+from handlers import cookie2user,COOKIE_NAME
 
 def init_jinja2(app,**kw):
     logging.info('jinja2 start...')
@@ -46,8 +46,8 @@ async def data_factory(app,handler):
             elif request.content_type.startswith('application/x-www-form-urlencoded'):
                 request.__data__=await request.post()
                 logging.info('request form:%s' % str(request.__data__))
-            return (await handler(request))
-        return parse_data
+        return (await handler(request))
+    return parse_data
 
 async def response_factory(app,handler):
     async def response(request):
@@ -75,8 +75,8 @@ async def response_factory(app,handler):
                 resp=web.Response(body=app['__templating__'].get_template(template).render(**r).encode("utf-8"))
                 resp.content_type='text/html;charset=utf-8'
                 return resp
-        if isinstance(r,int) and 100<=r<600:
-            return web.Response(r)
+        if isinstance(r,int) and 100<=t<600:
+            return web.Response(t)
         if isinstance(r,tuple) and len(r)==2:
             t,m=r
             if isinstance(t,int) and 100<=t<600:
@@ -88,8 +88,21 @@ async def response_factory(app,handler):
         return resp
     return response
 
-def datetime_filter(r):
-    delta=int(time.time()-r)
+async def auth_factory(app,handler):
+    async def auth(request):
+        logging.info('check user:%s %s' %request.method,request.path)
+        request.__user__=None
+        cookie_str=request.cookies.get(COOKIE_NAME)
+        if cookie_str:
+            user=await cookie2user(cookie_str)
+            if user:
+                logging.info('set correct user:%' %user.email)
+                request.__user__=user
+        return (await handler(request))
+    return auth
+
+def datetime_filter(t):
+    delta=int(time.time()-t)
     if delta<60:
         return u'%s minute ago' %delta
     if delta<3600:
@@ -101,17 +114,18 @@ def datetime_filter(r):
     dt=datetime.fromtimestamp(delta)
     return '%s:%s:%s' %(dt.year,dt.month,dt.day)
 
+
 async def init(loop):
     await orm.create_pool(loop,user='root',password='123456',db='awesome')
     app=web.Application(loop=loop,middlewares=[logger_factory,response_factory])
     init_jinja2(app,filter=dict(datetime=datetime_filter))
     add_routes(app,'handlers')
-
     add_static(app)
     srv=await loop.create_server(app.make_handler(),'127.0.0.1',9000)
     logging.info('server started at http://127.0.0.1:9000')
-    return srv
 
 loop=asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
+
 loop.run_forever()
+

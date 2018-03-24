@@ -1,22 +1,22 @@
 import json,logging,inspect,functools
 
-class ApiError(Exception):
+class APIError(Exception):
     def __init__(self,error,data='',message=''):
-        super(ApiError,self).__init__(message)
+        super(APIError,self).__init__(message)
         self.error=error
         self.data=data
         self.message=message
 
 
-class APIValueError(ApiError):
-    def __init__(self,field,message):
+class APIValueError(APIError):
+    def __init__(self,field,message=''):
         super(APIValueError,self).__init__('ValueError',field,message)
 
 
-class APINotFoundError(ApiError):
-    def __init__(self,field,message):
+class APINotFoundError(APIError):
+    def __init__(self,field,message=''):
         super(APINotFoundError,self).__init__('NotFoundError',field,message)
 
-class ApripermissionError(ApiError):
+class APIPermissionError(APIError):
     def __init__(self,message):
-        super(ApripermissionError,self).__init__('Forbidden','permission',message)
+        super(APIPermissionError,self).__init__('Forbidden','permission',message)

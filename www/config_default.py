@@ -6,7 +6,7 @@ configs={
         'password':'123456',
         'database':'awesome',
     },
-    'seesion':{
-        'secret':'AwEsOmE'
+    'session':{
+        'secret':'Awesome'
     }
 }

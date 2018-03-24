@@ -1,5 +1,5 @@
 from config_default import configs
-
+import config_default
 class Dict(dict):
     def __init__(self,names=(),values=(),**kw):
         super(Dict,self).__init__(**kw)
@@ -33,6 +33,8 @@ def toDict(d):
         D[k]=toDict(v) if isinstance(v,dict) else v
     return D
 
+configs=config_default.configs
+
 try:
     import config_overwrite
     configs=merge(configs,config_overwrite.config)
@@ -40,6 +42,4 @@ try:
 except ImportError:
     pass
 
-
 configs=toDict(configs)
-print (configs)

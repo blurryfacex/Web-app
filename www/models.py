@@ -1,8 +1,8 @@
 import time,uuid,sys,os
-from www.orm import Model,StringField,BooleanField,FloatField,TextField
+from orm import Model,StringField,BooleanField,FloatField,TextField
 
 def next_id():
-    return '%d015%s000' %(int(time.time()*1000),uuid.uuid4().hex)
+    return '%015d%s000' %(int(time.time()*1000),uuid.uuid4().hex)
 
 
 class User(Model):
@@ -10,11 +10,11 @@ class User(Model):
 
     id=StringField(primary_key=True,default=next_id,ddl='varchar(50)')
     email=StringField(ddl='varchar(50)')
-    password=StringField(ddl='varchar(50)')
+    passwd=StringField(ddl='varchar(50)')
     admin=BooleanField()
     name=StringField(ddl='varhchar(50)')
     image=StringField(ddl='varchar(500)')
-    created_id=FloatField(default=time.time())
+    created_at=FloatField(default=time.time)
 
 class Blog(Model):
     __table__='blogs'
@@ -26,7 +26,7 @@ class Blog(Model):
     name=StringField(ddl='varchar(50)')
     summary=StringField(ddl='varchar(200)')
     content=TextField()
-    created_at=FloatField(default=next_id())
+    created_at=FloatField(default=time.time)
 
 class Comment(Model):
     __table__='comments'
@@ -37,7 +37,7 @@ class Comment(Model):
     user_name=StringField(ddl='varchar(50)')
     user_image=StringField(ddl='varchar(50)')
     content=TextField()
-    created_at=FloatField(default=next_id())
+    created_at=FloatField(default=time.time)
 
 
 
