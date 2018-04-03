@@ -1,11 +1,26 @@
 <!DOCTYPE html>
+{% macro pagination(url, page) %}
+    <ul class="uk-pagination">
+        {% if page.has_previous %}
+            <li><a href="{{ url }}{{ page.page_index - 1 }}"><i class="uk-icon-angle-double-left"></i></a></li>
+        {% else %}
+            <li class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>
+        {% endif %}
+            <li class="uk-active"><span>{{ page.page_index }}</span></li>
+        {% if page.has_next %}
+            <li><a href="{{ url }}{{ page.page_index + 1 }}"><i class="uk-icon-angle-double-right"></i></a></li>
+        {% else %}
+            <li class="uk-disabled"><span><i class="uk-icon-angle-double-right"></i></span></li>
+        {% endif %}
+    </ul>
+{% endmacro %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Base{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/uikit.gradient.min.css" >
     <link rel="stylesheet" href="/static/css/uikit.min.css">
-    <link rel="stylesheet" href="/static/css/awesome.css">
+    <link rel="stylesheet" href="/static/css/awesome.css" />
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/sha1.min.js"></script>
     <script src="/static/js/uikit.min.js"></script>
@@ -17,27 +32,28 @@
 <body>
     <div class="uk-container uk-container-center uk-margin-top uk-margin-large-bottom">
         <nav class="uk-navbar uk-margin-large-bottom">
-            <a class="uk-navbar-brand">Brand</a>
+            <a class="uk-navbar-brand" href="/">Brand</a>
             <ul class="uk-navbar-nav">
-                <li class="uk-active"><a href="#">Blog</a></li>
-                <li class="uk-disabled"><a href="#">Text</a></li>
-                <li ><a href="#">Source</a></li>
+                <li class="uk-disabled"><a href="/">Blog</a></li>
+                <li class="uk-disabled"><a href="/manage/blogs/create">New Blogs</a></li>
             </ul>
-            <ul class="uk-navbar-flip uk-navbar-nav">
-                {%  if __user__ %}
-                <li class="uk-parent" data-uk-dropdown>
-                    <a href="#0"><i class="uk-icon-user"></i>{{ __user__.name }}</a>
-                    <div class="uk-dropdown uk-dropdown-navbar">
-                        <ul class="uk-nav uk-nav-navbar">
-                            <li><a href="/signout"><i class="uk-icon-sign-out"></i></a></li>
-                        </ul>
-                    </div>
-                </li>
-                {% else %}
-                <li class="" id="sign in"><a href="/signin">Sign in</a></li>
-                <li class="" id="register"><a href="/register">Sign up</a></li>
-                {% endif %}
-            </ul>
+            <div class="uk-navbar-flip">
+                <ul class=" uk-navbar-nav">
+                    {%  if __user__ %}
+                        <li class="uk-parent" data-uk-dropdown>
+                            <a href="#0"><i class="uk-icon-user"></i>{{ __user__.name }}</a>
+                            <div class="uk-dropdown uk-dropdown-navbar">
+                                <ul class="uk-nav uk-nav-navbar">
+                                    <li><a href="/signout"><i class="uk-icon-sign-out"></i>Signout</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    {% else %}
+                    <li class="" id="sign in"><a href="/signin">Sign in</a></li>
+                    <li class="" id="register"><a href="/register">Sign up</a></li>
+                    {% endif %}
+                </ul>
+            </div>
         </nav>
         {% block main %}{% endblock %}
     </div>

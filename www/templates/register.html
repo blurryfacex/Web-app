@@ -25,10 +25,10 @@
                             return $form.showFormError('please enter name');
                         }
                         if (! vaildateEmail(this.email.trim().toLowerCase())){
-                            return $form.showFormError('plase enter right email');
+                            return $form.showFormError('please enter right email');
                         }
                         if (this.password1.length <6){
-                            return $form.showFormError('at least have six cha');
+                            return $form.showFormError('at least have six character');
                         }
                         if (this.password2!==this.password1){
                             return $form.showFormError('password is not right');
@@ -55,7 +55,7 @@
 
 {% block main %}
     <div class="uk-width-2-3">
-    <h1>Welcome!</h1>
+        <h1>Welcome!</h1>
         <form id="vm" v-on="submit: submit" class="uk-form uk-form-stacked">
             <div class="uk-alert uk-alert-danger uk-hidden"></div>
             <div class="uk-form-row">
@@ -87,5 +87,6 @@
             </div>
         </form>
     </div>
+
 
 {% endblock %}

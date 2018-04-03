@@ -1,0 +1,31 @@
+{% extends  'blog_edit.html' %}
+
+{% block title %}{{ blog.name }}{% endblock %}
+
+{% block edit_blog %}
+    <form v-on="submit:submit" class="uk-form uk-form-stacked">
+        <div class="uk-alert uk-alert-danger uk-hidden"></div>
+        <div class="uk-form-row">
+            <label class="uk-form-label">Title</label>
+            <div class="uk-form-controls">
+                <input v-model="name" name="name" type="text" placeholder={{ blog.name }} class="uk-width-1-1">
+            </div>
+        </div>
+        <div class="uk-form-row">
+            <label class="uk-form-label">Summary</label>
+            <div class="uk-form-controls">
+                <textarea v-model="summary" rows=4 name="summary" type="text" placeholder={{ blog.summary }} class="uk-width-1-1"></textarea>
+            </div>
+        </div>
+        <div class="uk-form-row">
+            <label class="uk-form-label">Contents</label>
+            <div class="uk-formcontrols">
+                <textarea v-model="content" rows=16 name="content" type="text" placeholder={{ blog.content }} class="uk-width-1-1"></textarea>
+            </div>
+        </div>
+        <div class="uk-form-row">
+            <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-save"></i>Submmit</button>
+            <a href="/" class="uk-button"><i class="uk-icon-times"></i>Cancel</a>
+        </div>
+    </form>
+{% endblock %}

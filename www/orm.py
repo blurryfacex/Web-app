@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'Michael Liao'
-
 import asyncio, logging
 
 import aiomysql
@@ -15,7 +13,7 @@ def create_pool(loop, **kw):
     logging.info('create database connection pool...')
     global __pool
     __pool = yield from aiomysql.create_pool(
-        host=kw.get('host', 'localhost'),
+        host=kw.get('host', '127.0.0.1'),
         port=kw.get('port', 3306),
         user=kw['user'],
         password=kw['password'],
@@ -45,6 +43,7 @@ def select(sql, args, size=None):
 @asyncio.coroutine
 def execute(sql, args, autocommit=True):
     log(sql)
+    global __pool
     with (yield from __pool) as conn:
         if not autocommit:
             yield from conn.begin()
